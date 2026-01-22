@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Tragaperras Manual</title>
+<title>Tragaperras Manual Total</title>
 <style>
 body {
     background: black;
@@ -13,7 +13,7 @@ body {
 button, input {
     font-size: 18px;
     padding: 8px;
-    margin: 5px;
+    margin: 6px;
 }
 </style>
 </head>
@@ -23,9 +23,9 @@ button, input {
 
 <p>Dinero: $<span id="money">100</span></p>
 <p>Multiplicador: x<span id="mult">1</span></p>
-<p>Probabilidad de CRASH: <span id="risk">2</span>%</p>
+<p>Crash: <span id="risk">2</span>% (quita la mitad)</p>
 
-<input type="number" id="bet" placeholder="Cantidad a apostar" min="1">
+<input type="number" id="bet" placeholder="Cuánto apostar" min="1">
 <br>
 
 <button onclick="spin()">🎲 TIRAR</button>
@@ -33,7 +33,7 @@ button, input {
 
 <button onclick="buyMult()">Comprar x2 Mult ($100)</button>
 
-<p id="log"></p>
+<p id="log">Esperando tu jugada…</p>
 
 <script>
 let money = 100;
@@ -41,10 +41,16 @@ let mult = 1;
 let crashChance = 2; // %
 
 function spin() {
-    let bet = Number(document.getElementById("bet").value);
+    const betInput = document.getElementById("bet");
+    const bet = Number(betInput.value);
 
-    if (!bet || bet <= 0) {
-        log("❌ Apostá una cantidad válida");
+    if (betInput.value === "") {
+        log("❌ Tenés que escribir cuánto apostar");
+        return;
+    }
+
+    if (bet <= 0) {
+        log("❌ La apuesta debe ser mayor a 0");
         return;
     }
 
@@ -53,17 +59,17 @@ function spin() {
         return;
     }
 
-    let roll = Math.random() * 100;
+    const roll = Math.random() * 100;
 
-    // CRASH (pierde la mitad)
+    // CRASH (pierde la mitad del dinero TOTAL)
     if (roll < crashChance) {
-        let lost = Math.floor(money / 2);
+        const lost = Math.floor(money / 2);
         money -= lost;
-        log("💣 CRASH — perdiste $" + lost + " (la mitad)");
+        log("💣 CRASH — perdiste $" + lost);
     }
     // GANAR
     else if (roll < 65) {
-        let win = bet * mult;
+        const win = bet * mult;
         money += win;
         log("💰 Ganaste $" + win);
     }
@@ -77,15 +83,17 @@ function spin() {
 }
 
 function buyMult() {
-    if (money >= 100) {
-        money -= 100;
-        mult *= 2;
-        crashChance += 0.3; // sube muy poco
-        log("✖️ Multiplicador x" + mult + " comprado");
-        updateUI();
-    } else {
-        log("❌ No tenés dinero suficiente");
+    if (money < 100) {
+        log("❌ No tenés suficiente dinero");
+        return;
     }
+
+    money -= 100;
+    mult *= 2;
+    crashChance += 0.3;
+
+    log("✖️ Multiplicador mejorado a x" + mult);
+    updateUI();
 }
 
 function updateUI() {
@@ -101,4 +109,3 @@ function log(text) {
 
 </body>
 </html>
-
