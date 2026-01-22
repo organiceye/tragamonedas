@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Tragaperras Incremental</title>
+<style>
+body {
+    background: black;
+    color: lime;
+    font-family: monospace;
+    text-align: center;
+}
+button {
+    font-size: 18px;
+    padding: 10px;
+    margin: 5px;
+}
+</style>
+</head>
+<body>
+
+<h1>🎰 TRAGAPERRAS INCREMENTAL 🎰</h1>
+
+<p>Dinero: <span id="money">100</span></p>
+<p>Multiplicador: x<span id="mult">1</span></p>
+<p>Velocidad: <span id="speed">1</span> tiradas/seg</p>
+<p>Riesgo de CRASH: <span id="risk">1</span>%</p>
+
+<button onclick="buyMult()">Comprar x2 Mult ($100)</button>
+<button onclick="buySpeed()">Comprar +1 Velocidad ($150)</button>
+
+<script>
+let money = 100;
+let mult = 1;
+let speed = 1;
+let risk = 1;
+let interval;
+
+function startSlots() {
+    if (interval) clearInterval(interval);
+    interval = setInterval(spin, 1000 / speed);
+}
+
+function spin() {
+    let roll = Math.random() * 100;
+
+    if (roll < risk) {
+        money = 0;
+        alert("💣 CRASH! PERDISTE TODO 💣");
+    } else if (roll < 70) {
+        money += 10 * mult;
+    } else {
+        money -= 5;
+        if (money < 0) money = 0;
+    }
+    updateUI();
+}
+
+function buyMult() {
+    if (money >= 100) {
+        money -= 100;
+        mult *= 2;
+        risk += 1;
+        updateUI();
+    }
+}
+
+function buySpeed() {
+    if (money >= 150) {
+        money -= 150;
+        speed += 1;
+        risk += 0.5;
+        startSlots();
+        updateUI();
+    }
+}
+
+function updateUI() {
+    document.getElementById("money").innerText = Math.floor(money);
+    document.getElementById("mult").innerText = mult;
+    document.getElementById("speed").innerText = speed;
+    document.getElementById("risk").innerText = risk.toFixed(1);
+}
+
+startSlots();
+</script>
+
+</body>
+</html>
