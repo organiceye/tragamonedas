@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Tragaperras Incremental</title>
+<title>Tragaperras Manual</title>
 <style>
 body {
     background: black;
@@ -10,49 +10,69 @@ body {
     font-family: monospace;
     text-align: center;
 }
-button {
+button, input {
     font-size: 18px;
-    padding: 10px;
+    padding: 8px;
     margin: 5px;
 }
 </style>
 </head>
 <body>
 
-<h1>🎰 TRAGAPERRAS INCREMENTAL 🎰</h1>
+<h1>🎰 TRAGAPERRAS MANUAL 🎰</h1>
 
-<p>Dinero: <span id="money">100</span></p>
+<p>Dinero: $<span id="money">100</span></p>
 <p>Multiplicador: x<span id="mult">1</span></p>
-<p>Velocidad: <span id="speed">1</span> tiradas/seg</p>
-<p>Riesgo de CRASH: <span id="risk">1</span>%</p>
+<p>Probabilidad de CRASH: <span id="risk">2</span>%</p>
+
+<input type="number" id="bet" placeholder="Cantidad a apostar" min="1">
+<br>
+
+<button onclick="spin()">🎲 TIRAR</button>
+<br><br>
 
 <button onclick="buyMult()">Comprar x2 Mult ($100)</button>
-<button onclick="buySpeed()">Comprar +1 Velocidad ($150)</button>
+
+<p id="log"></p>
 
 <script>
 let money = 100;
 let mult = 1;
-let speed = 1;
-let risk = 1;
-let interval;
-
-function startSlots() {
-    if (interval) clearInterval(interval);
-    interval = setInterval(spin, 1000 / speed);
-}
+let crashChance = 2; // %
 
 function spin() {
+    let bet = Number(document.getElementById("bet").value);
+
+    if (!bet || bet <= 0) {
+        log("❌ Apostá una cantidad válida");
+        return;
+    }
+
+    if (bet > money) {
+        log("❌ No tenés suficiente dinero");
+        return;
+    }
+
     let roll = Math.random() * 100;
 
-    if (roll < risk) {
-        money = 0;
-        alert("💣 CRASH! PERDISTE TODO 💣");
-    } else if (roll < 70) {
-        money += 10 * mult;
-    } else {
-        money -= 5;
-        if (money < 0) money = 0;
+    // CRASH (pierde la mitad)
+    if (roll < crashChance) {
+        let lost = Math.floor(money / 2);
+        money -= lost;
+        log("💣 CRASH — perdiste $" + lost + " (la mitad)");
     }
+    // GANAR
+    else if (roll < 65) {
+        let win = bet * mult;
+        money += win;
+        log("💰 Ganaste $" + win);
+    }
+    // PERDER
+    else {
+        money -= bet;
+        log("❌ Perdiste $" + bet);
+    }
+
     updateUI();
 }
 
@@ -60,30 +80,25 @@ function buyMult() {
     if (money >= 100) {
         money -= 100;
         mult *= 2;
-        risk += 1;
+        crashChance += 0.3; // sube muy poco
+        log("✖️ Multiplicador x" + mult + " comprado");
         updateUI();
-    }
-}
-
-function buySpeed() {
-    if (money >= 150) {
-        money -= 150;
-        speed += 1;
-        risk += 0.5;
-        startSlots();
-        updateUI();
+    } else {
+        log("❌ No tenés dinero suficiente");
     }
 }
 
 function updateUI() {
-    document.getElementById("money").innerText = Math.floor(money);
+    document.getElementById("money").innerText = money;
     document.getElementById("mult").innerText = mult;
-    document.getElementById("speed").innerText = speed;
-    document.getElementById("risk").innerText = risk.toFixed(1);
+    document.getElementById("risk").innerText = crashChance.toFixed(1);
 }
 
-startSlots();
+function log(text) {
+    document.getElementById("log").innerText = text;
+}
 </script>
 
 </body>
 </html>
+
