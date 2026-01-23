@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Tragaperras Manual Total</title>
+<title>Tragaperras Real</title>
 <style>
 body {
     background: black;
@@ -15,65 +15,106 @@ button, input {
     padding: 8px;
     margin: 6px;
 }
+.reels {
+    font-size: 60px;
+    margin: 20px;
+}
 </style>
 </head>
 <body>
 
-<h1>🎰 TRAGAPERRAS MANUAL 🎰</h1>
+<h1>🎰 TRAGAPERRAS REAL 🎰</h1>
 
 <p>Dinero: $<span id="money">100</span></p>
+<p>Jackpot: $<span id="jackpot">500</span></p>
 <p>Multiplicador: x<span id="mult">1</span></p>
-<p>Crash: <span id="risk">2</span>% (quita la mitad)</p>
 
 <input type="number" id="bet" placeholder="Cuánto apostar" min="1">
 <br>
 
 <button onclick="spin()">🎲 TIRAR</button>
-<br><br>
-
 <button onclick="buyMult()">Comprar x2 Mult ($100)</button>
+<button onclick="resetGame()">🔄 Reiniciar</button>
+
+<div class="reels">
+    <span id="r1">🍒</span>
+    <span id="r2">🍒</span>
+    <span id="r3">🍒</span>
+</div>
 
 <p id="log">Esperando tu jugada…</p>
 
 <script>
 let money = 100;
 let mult = 1;
-let crashChance = 2; // %
+let jackpot = 500;
+
+// Símbolos y probabilidades
+const symbols = [
+    {icon: "🍒", value: 1, weight: 35},
+    {icon: "🍋", value: 2, weight: 25},
+    {icon: "🔔", value: 5, weight: 20},
+    {icon: "💎", value: 10, weight: 12},
+    {icon: "⭐", value: 20, weight: 6},
+    {icon: "💰", value: 0, weight: 2} // Jackpot
+];
+
+function weightedRandom() {
+    let total = symbols.reduce((sum, s) => sum + s.weight, 0);
+    let roll = Math.random() * total;
+    for (let s of symbols) {
+        if (roll < s.weight) return s;
+        roll -= s.weight;
+    }
+}
 
 function spin() {
     const betInput = document.getElementById("bet");
     const bet = Number(betInput.value);
 
-    if (betInput.value === "") {
+    if (!betInput.value || bet <= 0) {
         log("❌ Tenés que escribir cuánto apostar");
         return;
     }
-
-    if (bet <= 0) {
-        log("❌ La apuesta debe ser mayor a 0");
-        return;
-    }
-
     if (bet > money) {
         log("❌ No tenés suficiente dinero");
         return;
     }
 
-    const roll = Math.random() * 100;
+    // Aumenta jackpot con cada apuesta
+    jackpot += 1;
 
-    // CRASH (pierde la mitad del dinero TOTAL)
-    if (roll < crashChance) {
-        const lost = Math.floor(money / 2);
-        money -= lost;
-        log("💣 CRASH — perdiste $" + lost);
-    }
-    // GANAR
-    else if (roll < 65) {
-        const win = bet * mult;
+    // Girar carretes
+    const r1 = weightedRandom();
+    const r2 = weightedRandom();
+    const r3 = weightedRandom();
+
+    document.getElementById("r1").innerText = r1.icon;
+    document.getElementById("r2").innerText = r2.icon;
+    document.getElementById("r3").innerText = r3.icon;
+
+    let win = 0;
+
+    // Jackpot
+    if (r1.icon === "💰" && r2.icon === "💰" && r3.icon === "💰") {
+        win = jackpot;
+        jackpot = 500; // se reinicia
         money += win;
-        log("💰 Ganaste $" + win);
+        log("🎉 JACKPOT! Ganaste $" + win);
     }
-    // PERDER
+    // 3 iguales
+    else if (r1.icon === r2.icon && r2.icon === r3.icon) {
+        win = bet * r1.value * mult;
+        money += win;
+        log("💰 3 IGUALES! Ganaste $" + win);
+    }
+    // 2 iguales
+    else if (r1.icon === r2.icon || r1.icon === r3.icon || r2.icon === r3.icon) {
+        let symbol = (r1.icon === r2.icon) ? r1 : (r1.icon === r3.icon) ? r1 : r2;
+        win = bet * symbol.value * 0.5 * mult;
+        money += win;
+        log("✨ 2 IGUALES! Ganaste $" + win.toFixed(0));
+    }
     else {
         money -= bet;
         log("❌ Perdiste $" + bet);
@@ -87,19 +128,24 @@ function buyMult() {
         log("❌ No tenés suficiente dinero");
         return;
     }
-
     money -= 100;
     mult *= 2;
-    crashChance += 0.3;
-
     log("✖️ Multiplicador mejorado a x" + mult);
+    updateUI();
+}
+
+function resetGame() {
+    money = 100;
+    mult = 1;
+    jackpot = 500;
+    log("🔄 Juego reiniciado");
     updateUI();
 }
 
 function updateUI() {
     document.getElementById("money").innerText = money;
+    document.getElementById("jackpot").innerText = jackpot;
     document.getElementById("mult").innerText = mult;
-    document.getElementById("risk").innerText = crashChance.toFixed(1);
 }
 
 function log(text) {
