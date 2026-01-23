@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Tragaperras Real</title>
+<title>Tragaperras ASCII - DIFICIL</title>
 <style>
 body {
     background: black;
@@ -16,17 +16,19 @@ button, input {
     margin: 6px;
 }
 .reels {
-    font-size: 60px;
-    margin: 20px;
+    font-size: 22px;
+    line-height: 22px;
+    margin: 20px auto;
+    white-space: pre;
 }
 </style>
 </head>
 <body>
 
-<h1>🎰 TRAGAPERRAS REAL 🎰</h1>
+<h1>🎰 TRAGAPERRAS ASCII (DIFICIL) 🎰</h1>
 
 <p>Dinero: $<span id="money">100</span></p>
-<p>Jackpot: $<span id="jackpot">500</span></p>
+<p>Jackpot: $<span id="jackpot">1000</span></p>
 <p>Multiplicador: x<span id="mult">1</span></p>
 
 <input type="number" id="bet" placeholder="Cuánto apostar" min="1">
@@ -36,10 +38,12 @@ button, input {
 <button onclick="buyMult()">Comprar x2 Mult ($100)</button>
 <button onclick="resetGame()">🔄 Reiniciar</button>
 
-<div class="reels">
-    <span id="r1">🍒</span>
-    <span id="r2">🍒</span>
-    <span id="r3">🍒</span>
+<div class="reels" id="reels">
++-----------------------+
+|  🍒   🍒   🍒  |
+|  🍋   🔔   💎  |
+|  ⭐   💰   🍒  |
++-----------------------+
 </div>
 
 <p id="log">Esperando tu jugada…</p>
@@ -47,16 +51,15 @@ button, input {
 <script>
 let money = 100;
 let mult = 1;
-let jackpot = 500;
+let jackpot = 1000;
 
-// Símbolos y probabilidades
 const symbols = [
-    {icon: "🍒", value: 1, weight: 35},
+    {icon: "🍒", value: 1, weight: 50},
     {icon: "🍋", value: 2, weight: 25},
-    {icon: "🔔", value: 5, weight: 20},
-    {icon: "💎", value: 10, weight: 12},
-    {icon: "⭐", value: 20, weight: 6},
-    {icon: "💰", value: 0, weight: 2} // Jackpot
+    {icon: "🔔", value: 5, weight: 12},
+    {icon: "💎", value: 10, weight: 7},
+    {icon: "⭐", value: 20, weight: 4},
+    {icon: "💰", value: 0, weight: 2}
 ];
 
 function weightedRandom() {
@@ -81,41 +84,37 @@ function spin() {
         return;
     }
 
-    // Aumenta jackpot con cada apuesta
+    // aumenta jackpot con cada apuesta
     jackpot += 1;
 
-    // Girar carretes
     const r1 = weightedRandom();
     const r2 = weightedRandom();
     const r3 = weightedRandom();
 
-    document.getElementById("r1").innerText = r1.icon;
-    document.getElementById("r2").innerText = r2.icon;
-    document.getElementById("r3").innerText = r3.icon;
+    const reelsText =
+`+-----------------------+
+|   ${r1.icon}     ${r2.icon}     ${r3.icon}   |
++-----------------------+`;
+
+    document.getElementById("reels").innerText = reelsText;
 
     let win = 0;
 
-    // Jackpot
     if (r1.icon === "💰" && r2.icon === "💰" && r3.icon === "💰") {
         win = jackpot;
-        jackpot = 500; // se reinicia
+        jackpot = 1000;
         money += win;
         log("🎉 JACKPOT! Ganaste $" + win);
-    }
-    // 3 iguales
-    else if (r1.icon === r2.icon && r2.icon === r3.icon) {
+    } else if (r1.icon === r2.icon && r2.icon === r3.icon) {
         win = bet * r1.value * mult;
         money += win;
         log("💰 3 IGUALES! Ganaste $" + win);
-    }
-    // 2 iguales
-    else if (r1.icon === r2.icon || r1.icon === r3.icon || r2.icon === r3.icon) {
+    } else if (r1.icon === r2.icon || r1.icon === r3.icon || r2.icon === r3.icon) {
         let symbol = (r1.icon === r2.icon) ? r1 : (r1.icon === r3.icon) ? r1 : r2;
-        win = bet * symbol.value * 0.5 * mult;
+        win = bet * symbol.value * 0.25 * mult;
         money += win;
         log("✨ 2 IGUALES! Ganaste $" + win.toFixed(0));
-    }
-    else {
+    } else {
         money -= bet;
         log("❌ Perdiste $" + bet);
     }
@@ -137,7 +136,7 @@ function buyMult() {
 function resetGame() {
     money = 100;
     mult = 1;
-    jackpot = 500;
+    jackpot = 1000;
     log("🔄 Juego reiniciado");
     updateUI();
 }
@@ -155,3 +154,4 @@ function log(text) {
 
 </body>
 </html>
+
