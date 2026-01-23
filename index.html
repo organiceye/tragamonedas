@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Tragaperras ASCII - DIFICIL</title>
+<title>Tragaperras 3x3 Casino</title>
 <style>
 body {
     background: black;
@@ -25,7 +25,7 @@ button, input {
 </head>
 <body>
 
-<h1>🎰 TRAGAPERRAS ASCII (DIFICIL) 🎰</h1>
+<h1>🎰 TRAGAPERRAS 3x3 CASINO 🎰</h1>
 
 <p>Dinero: $<span id="money">100</span></p>
 <p>Jackpot: $<span id="jackpot">1000</span></p>
@@ -48,10 +48,17 @@ button, input {
 
 <p id="log">Esperando tu jugada…</p>
 
+<!-- Sonidos -->
+<audio id="spinSound" src="https://actions.google.com/sounds/v1/foley/slot_machine_spin.ogg"></audio>
+<audio id="winLineSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
+<audio id="jackpotSound" src="https://actions.google.com/sounds/v1/cartoon/large_prize.ogg"></audio>
+<audio id="loseSound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
+
 <script>
 let money = 100;
 let mult = 1;
 let jackpot = 1000;
+const jackpotStart = 1000;
 
 const symbols = [
     {icon: "🍒", value: 1, weight: 50},
@@ -71,6 +78,22 @@ function weightedRandom() {
     }
 }
 
+function getRandomGrid() {
+    return [
+        [weightedRandom(), weightedRandom(), weightedRandom()],
+        [weightedRandom(), weightedRandom(), weightedRandom()],
+        [weightedRandom(), weightedRandom(), weightedRandom()]
+    ];
+}
+
+function renderGrid(grid) {
+    return `+-----------------------+
+|  ${grid[0][0].icon}   ${grid[0][1].icon}   ${grid[0][2].icon}  |
+|  ${grid[1][0].icon}   ${grid[1][1].icon}   ${grid[1][2].icon}  |
+|  ${grid[2][0].icon}   ${grid[2][1].icon}   ${grid[2][2].icon}  |
++-----------------------+`;
+}
+
 function spin() {
     const betInput = document.getElementById("bet");
     const bet = Number(betInput.value);
@@ -84,39 +107,61 @@ function spin() {
         return;
     }
 
-    // aumenta jackpot con cada apuesta
-    jackpot += 1;
+    document.getElementById("spinSound").play();
 
-    const r1 = weightedRandom();
-    const r2 = weightedRandom();
-    const r3 = weightedRandom();
+    // animación de giro
+    let animationCount = 0;
+    const animationInterval = setInterval(() => {
+        const tempGrid = getRandomGrid();
+        document.getElementById("reels").innerText = renderGrid(tempGrid);
+        animationCount++;
 
-    const reelsText =
-`+-----------------------+
-|   ${r1.icon}     ${r2.icon}     ${r3.icon}   |
-+-----------------------+`;
+        if (animationCount >= 12) {
+            clearInterval(animationInterval);
+            finalSpin(bet);
+        }
+    }, 80);
+}
 
-    document.getElementById("reels").innerText = reelsText;
+function finalSpin(bet) {
+    const grid = getRandomGrid();
+    document.getElementById("reels").innerText = renderGrid(grid);
+
+    const lines = [
+        [grid[0][0], grid[0][1], grid[0][2]],
+        [grid[1][0], grid[1][1], grid[1][2]],
+        [grid[2][0], grid[2][1], grid[2][2]],
+        [grid[0][0], grid[1][1], grid[2][2]],
+        [grid[0][2], grid[1][1], grid[2][0]]
+    ];
 
     let win = 0;
+    let winLines = 0;
 
-    if (r1.icon === "💰" && r2.icon === "💰" && r3.icon === "💰") {
-        win = jackpot;
-        jackpot = 1000;
-        money += win;
-        log("🎉 JACKPOT! Ganaste $" + win);
-    } else if (r1.icon === r2.icon && r2.icon === r3.icon) {
-        win = bet * r1.value * mult;
-        money += win;
-        log("💰 3 IGUALES! Ganaste $" + win);
-    } else if (r1.icon === r2.icon || r1.icon === r3.icon || r2.icon === r3.icon) {
-        let symbol = (r1.icon === r2.icon) ? r1 : (r1.icon === r3.icon) ? r1 : r2;
-        win = bet * symbol.value * 0.25 * mult;
-        money += win;
-        log("✨ 2 IGUALES! Ganaste $" + win.toFixed(0));
-    } else {
+    for (let line of lines) {
+        if (line[0].icon === line[1].icon && line[1].icon === line[2].icon) {
+            winLines++;
+            if (line[0].icon === "💰") {
+                win += jackpot;
+                jackpot = jackpotStart;
+            } else {
+                win += bet * line[0].value * mult;
+            }
+        }
+    }
+
+    if (winLines === 0) {
         money -= bet;
+        jackpot += bet;
+        document.getElementById("loseSound").play();
         log("❌ Perdiste $" + bet);
+    } else {
+        money += win;
+        document.getElementById("winLineSound").play();
+        if (win >= jackpotStart) {
+            document.getElementById("jackpotSound").play();
+        }
+        log("💰 Ganaste $" + win + " en " + winLines + " línea(s)");
     }
 
     updateUI();
@@ -136,7 +181,7 @@ function buyMult() {
 function resetGame() {
     money = 100;
     mult = 1;
-    jackpot = 1000;
+    jackpot = jackpotStart;
     log("🔄 Juego reiniciado");
     updateUI();
 }
